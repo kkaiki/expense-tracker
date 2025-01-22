@@ -24,7 +24,7 @@ Data: JSON.stringify
   "income": 10000,
   "budget": {
     "food": 1000
-  },
+  },  
   "expenses": [
     {
       "id": "aaa",
