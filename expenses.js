@@ -27,22 +27,29 @@ function loadTabs() {
 
     // Clear existing tabs
     document.getElementById('datesTab').innerHTML = '';
-    document.getElementById('expensesTabContent').innerHTML = '';
 
     savedDates.forEach(dateInfo => {
         createTab(dateInfo.monthYear, dateInfo.tabId);
-        createHtmlContent(dateInfo.monthYear, dateInfo.tabId);
-        loadContent(dateInfo.tabId);
     });
 
     // Activate first tab if exists
     const firstTab = document.querySelector('.nav-link');
     if (firstTab) {
         firstTab.classList.add('active');
-        const firstPaneId = firstTab.getAttribute('data-bs-target');
-        document.querySelector(firstPaneId).classList.add('show', 'active');
-        localStorage.setItem('activeTab', firstTab.id.split('-')[1]);
+        firstTab.click()
     }
+}
+
+function clickTab(tabId) {
+    document.getElementById('expensesTabContent').innerHTML = '';
+    const firstTab = document.querySelector('#optionsTab .nav-link');
+    if (firstTab) {
+        firstTab.click();
+    }
+
+    activateTab(tabId);
+    createHtmlContent(tabId);
+    loadContent(tabId);
 }
 
 function addNewTab() {
@@ -134,12 +141,13 @@ function createDataObject(tabId) {
 
 function createTab(monthYear, tabId) {
     const tabButton = `
-        <li class="nav-item" role="presentation">
+        <li class="nav-item" role="presentation" onclick="clickTab('${tabId}')">
             <div class="nav-link position-relative d-flex align-items-center" 
                     id="${tabId}-tab" 
                     data-bs-toggle="tab" 
                     data-bs-target="#${tabId}-pane" 
-                    role="tab">
+                    role="tab"
+                    onclick="activateTab('${tabId}')">
                 <span>${monthYear}</span>
                 <button class="btn btn-sm btn-danger ms-2" 
                         onclick="deleteTab('${tabId}')">×</button>
@@ -150,14 +158,11 @@ function createTab(monthYear, tabId) {
     document.getElementById('datesTab').insertAdjacentHTML('beforeend', tabButton);
 }
 
-function createHtmlContent(monthYear, tabId) {
+function createHtmlContent(tabId) {
     createDataObject(tabId);
 
     const tabContent = `
-        <div class="tab-pane fade" 
-             id="${tabId}-pane" 
-             role="tabpanel" 
-             tabindex="0">
+        <div id="${tabId}-pane">
             <div class="p-3">
                 <!-- Income and Budget Section -->
                 <div class="mb-3">
@@ -230,21 +235,7 @@ function createHtmlContent(monthYear, tabId) {
 }
 
 function activateTab(tabId) {
-    // Deactivate all tabs
-    document.querySelectorAll('.nav-link').forEach(tab => {
-        tab.classList.remove('active');
-    });
-
-    document.querySelectorAll('.tab-pane').forEach(pane => {
-        pane.classList.remove('show', 'active');
-    });
-
-    localStorage.setItem('activeTab', tabId);
-
-    // Activate the specified tab
-    const newTab = document.getElementById(`${tabId}-tab`);
-    newTab.classList.add('active');
-    document.getElementById(`${tabId}-pane`).classList.add('show', 'active');
+    localStorage.setItem('activeTab', tabId.split('-')[1]);
 }
 
 function deleteTab(tabId) {
