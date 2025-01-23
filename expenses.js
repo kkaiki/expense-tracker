@@ -40,8 +40,26 @@ function loadTabs() {
     }
 }
 
+function createTab(monthYear, tabId) {
+    const tabButton = `
+        <li class="nav-item" role="presentation" onclick="clickTab('${tabId}')">
+            <div class="nav-link position-relative d-flex align-items-center" 
+                    id="${tabId}-tab" 
+                    data-bs-toggle="tab" 
+                    data-bs-target="#${tabId}-pane" 
+                    role="tab"
+                    onclick="activateTab('${tabId}')">
+                <span>${monthYear}</span>
+                <button class="btn btn-sm btn-danger ms-2" 
+                        onclick="deleteTab('${tabId}')">×</button>
+            </div>
+        </li>
+    `;
+
+    document.getElementById('datesTab').insertAdjacentHTML('beforeend', tabButton);
+}
+
 function clickTab(tabId) {
-    document.getElementById('expensesTabContent').innerHTML = '';
     const firstTab = document.querySelector('#optionsTab .nav-link');
     if (firstTab) {
         firstTab.click();
@@ -119,7 +137,6 @@ function validateAndCreateDate() {
     modal.hide();
 }
 
-
 function createDataObject(tabId) {
     // Initialize data structure for this tab if it doesn't exist
     const storageKey = `expenses-${tabId}`;
@@ -139,27 +156,54 @@ function createDataObject(tabId) {
     }
 }
 
-function createTab(monthYear, tabId) {
-    const tabButton = `
-        <li class="nav-item" role="presentation" onclick="clickTab('${tabId}')">
-            <div class="nav-link position-relative d-flex align-items-center" 
-                    id="${tabId}-tab" 
-                    data-bs-toggle="tab" 
-                    data-bs-target="#${tabId}-pane" 
-                    role="tab"
-                    onclick="activateTab('${tabId}')">
-                <span>${monthYear}</span>
-                <button class="btn btn-sm btn-danger ms-2" 
-                        onclick="deleteTab('${tabId}')">×</button>
-            </div>
-        </li>
-    `;
+function addNewBudget(tabId, event) {
+    event.preventDefault();
 
-    document.getElementById('datesTab').insertAdjacentHTML('beforeend', tabButton);
+    const storageKey = `expenses-${tabId}`;
+    const data = JSON.parse(localStorage.getItem(storageKey));
+
+    const category = document.getElementById(`new-category-${tabId}`).value;
+    const budget = parseFloat(document.getElementById(`new-budget-${tabId}`).value) || 0;
+
+    // Check if category already exists
+    if (data.budget[category]) {
+        alert('This category already exists!');
+        return;
+    }
+
+    // Add new budget category
+    data.budget[category] = budget;
+
+    // Initialize category in resume if it doesn't exist
+    if (!data.resume.category[category]) {
+        data.resume.category[category] = 0;
+    }
+
+    localStorage.setItem(storageKey, JSON.stringify(data));
+
+    // Reset form and refresh display
+    event.target.reset();
+    loadCategories(tabId);
+    refreshSummary(tabId);
+}
+
+function loadCategories(tabId) {
+    const storageKey = `expenses-${tabId}`;
+    const data = JSON.parse(localStorage.getItem(storageKey));
+    const categories = Object.keys(data.budget);
+
+    let options = '<option value="">Select Category</option>';
+    options += categories.map(category =>
+        `<option value="${category}">${category}</option>`
+    ).join('')
+
+    document.getElementById(`category-${tabId}`).innerHTML = options;
 }
 
 function createHtmlContent(tabId) {
     createDataObject(tabId);
+
+    document.getElementById('expensesTabContent').innerHTML = '';
 
     const tabContent = `
         <div id="${tabId}-pane">
@@ -191,6 +235,24 @@ function createHtmlContent(tabId) {
                             <div class="accordion-body" id="budget-form-${tabId}">   
                                 <!-- Budget will be populated by refreshBudget function -->
                             </div>
+                            <!-- Add new budget category form -->
+                            <div class="accordion-body">
+                                <form onsubmit="addNewBudget('${tabId}', event)" class="mb-3">
+                                    <div class="row align-items-end">
+                                        <div class="col">
+                                            <label>New Category:</label>
+                                            <input type="text" class="form-control" id="new-category-${tabId}" required>
+                                        </div>
+                                        <div class="col">
+                                            <label>Budget Amount:</label>
+                                            <input type="number" class="form-control" id="new-budget-${tabId}" required>
+                                        </div>
+                                        <div class="col">
+                                            <button type="submit" class="btn btn-primary">Add Budget</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -210,8 +272,8 @@ function createHtmlContent(tabId) {
                                    id="amount-${tabId}" required>
                         </div>
                         <div class="col">
-                            <input type="text" class="form-control" placeholder="Category" 
-                                       id="category-${tabId}" required>
+                            <select class="form-control" id="category-${tabId}" required>
+                            </select>
                         </div>
                         <div class="col">
                             <input type="text" class="form-control" placeholder="Description" 
