@@ -41,6 +41,7 @@ function loadTabs() {
         firstTab.classList.add('active');
         const firstPaneId = firstTab.getAttribute('data-bs-target');
         document.querySelector(firstPaneId).classList.add('show', 'active');
+        localStorage.setItem('activeTab', firstTab.id.split('-')[1]);
     }
 }
 
@@ -140,7 +141,7 @@ function createTab(monthYear, tabId) {
                     data-bs-target="#${tabId}-pane" 
                     role="tab">
                 <span>${monthYear}</span>
-                <button class="btn btn-sm btn-danger rounded-circle ms-2" 
+                <button class="btn btn-sm btn-danger ms-2" 
                         onclick="deleteTab('${tabId}')">×</button>
             </div>
         </li>
@@ -165,12 +166,38 @@ function createHtmlContent(monthYear, tabId) {
                            onchange="updateIncome('${tabId}')">
                 </div>
 
-                <!-- Add Budget Form -->
-                <div id="budget-form-${tabId}">
-                    <!-- Budget will be populated by refreshBudget function -->
+                <!-- Add Budget Accordion Form -->
+                <div class="accordion accordion-flush" id="budget-accordion-${tabId}">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                          <button class="accordion-button collapsed" type="button" 
+                                  data-bs-toggle="collapse" 
+                                  data-bs-target="#flush-collapseOne" 
+                                  aria-expanded="false" 
+                                  aria-controls="flush-collapseOne"
+                                  style="background-color: #ffebee;">
+                            Budgets
+                          </button>
+                        </h2>
+
+                        <div id="flush-collapseOne" class="accordion-collapse collapse" 
+                             data-bs-parent="#budget-accordion-${tabId}"
+                             style="background-color: #ffebee;">
+                            <div class="accordion-body" id="budget-form-${tabId}">   
+                                <!-- Budget will be populated by refreshBudget function -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Add Expense Form -->
+                <br/>
+
+                <!-- Expenses Summary -->
+                <div id="summary-${tabId}" class="mb-3">
+                    <!-- Summary will be populated by refreshSummary function -->
+                </div>
+
+                 <!-- Add Expense Form -->
                 <form onsubmit="addExpense('${tabId}', event)" class="mb-3">
                     <div class="row">
                         <div class="col">
@@ -191,11 +218,6 @@ function createHtmlContent(monthYear, tabId) {
                     </div>
                 </form>
 
-                <!-- Expenses Summary -->
-                <div id="summary-${tabId}" class="mb-3">
-                    <!-- Summary will be populated by refreshSummary function -->
-                </div>
-
                 <!-- Expenses List -->
                 <div id="expenses-list-${tabId}">
                     <!-- Expenses will be populated by refreshSummary function -->
@@ -212,10 +234,12 @@ function activateTab(tabId) {
     document.querySelectorAll('.nav-link').forEach(tab => {
         tab.classList.remove('active');
     });
-    
+
     document.querySelectorAll('.tab-pane').forEach(pane => {
         pane.classList.remove('show', 'active');
     });
+
+    localStorage.setItem('activeTab', tabId);
 
     // Activate the specified tab
     const newTab = document.getElementById(`${tabId}-tab`);
