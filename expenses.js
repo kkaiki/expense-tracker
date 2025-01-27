@@ -415,17 +415,45 @@ function refreshSummary(tabId) {
 
     // Update expenses list
     const expensesHtml = data.expenses.map(expense => `
-        <div class="card mb-2">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6>${expense.description}</h6>
-                        <small>${expense.category} - ${expense.date}</small>
+        <div class="card mb-2 expense-card">
+            <div class="card-body py-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="expense-title">
+                            <input type="text" 
+                                   value="${expense.description}" 
+                                   onchange="updateExpenseField('${tabId}', '${expense.id}', 'description', this.value)"
+                                   class="seamless-input fw-bold" 
+                                   style="background: transparent; border: none; width: 100%;">
+                        </div>
+                        <div class="expense-details">
+                            <select onchange="updateExpenseField('${tabId}', '${expense.id}', 'category', this.value)"
+                                    class="seamless-input text-muted" 
+                                    style="background: transparent; border: none; padding: 0;">
+                                ${Object.keys(data.budget).map(cat => 
+                                    `<option value="${cat}" ${cat === expense.category ? 'selected' : ''}>${cat}</option>`
+                                ).join('')}
+                            </select>
+                            <small class="text-muted ms-2">
+                                ${new Date(expense.date).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric'
+                                })}
+                            </small>
+                        </div>
                     </div>
-                    <div>
-                        <strong>$${expense.amount}</strong>
-                        <button class="btn btn-sm btn-danger ms-2" 
-                                onclick="deleteExpense('${tabId}', '${expense.id}')">×</button>
+                    <div class="d-flex align-items-center">
+                        <span class="text-muted me-1">$</span>
+                        <input type="number" 
+                               value="${expense.amount}" 
+                               onchange="updateExpenseField('${tabId}', '${expense.id}', 'amount', this.value)"
+                               class="seamless-input text-end fw-bold" 
+                               style="background: transparent; border: none; width: 100px;">
+                        <button class="btn btn-link text-danger ms-2 p-0" 
+                                onclick="deleteExpense('${tabId}', '${expense.id}')">
+                            <i class="bi bi-x-circle"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -477,6 +505,33 @@ function deleteExpense(tabId, expenseId) {
     refreshSummary(tabId);
 }
 
+function updateExpenseField(tabId, expenseId, field, value) {
+    const storageKey = `expenses-${tabId}`;
+    const data = JSON.parse(localStorage.getItem(storageKey));
+    console.log(data);
+    
+    const expenseIndex = data.expenses.findIndex(exp => exp.id === expenseId);
+    if (expenseIndex === -1) return;
+
+    if (field === 'amount') {
+        value = parseFloat(value) || 0;
+        const category = data.expenses[expenseIndex].category;
+        if (!checkBudgetAlert(tabId, category, value)) {
+            return;
+        }
+    } else if (field === 'category') {
+        const amount = data.expenses[expenseIndex].amount;
+        if (!checkBudgetAlert(tabId, value, amount)) {
+            return;
+        }
+    }
+
+    data.expenses[expenseIndex][field] = value;
+    updateResume(data);
+    localStorage.setItem(storageKey, JSON.stringify(data));
+    refreshSummary(tabId);
+}
+
 function checkBudgetAlert(tabId, category, amount) {
     const storageKey = `expenses-${tabId}`;
     const data = JSON.parse(localStorage.getItem(storageKey));
@@ -485,8 +540,8 @@ function checkBudgetAlert(tabId, category, amount) {
     const budget = data.budget[category] || 0;
     
     if (budget > 0 && (currentTotal + amount) > budget) {
-        const overAmount = (currentTotal + amount - budget).toFixed(2);
-        const message = `${category}: Budget will be exceeded by ${overAmount}.\nDo you want to continue?`;
+        const overAmount = (currentTotal + amount - budget);
+        const message = `${category}: Budget will be exceeded by $${overAmount}\nDo you want to continue?`;
         return confirm(message);
     }
     return true;
