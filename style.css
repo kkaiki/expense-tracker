@@ -8,3 +8,15 @@ body {
     font-family: 'Arial', sans-serif;
     color: #333;
 }
+
+#reportsTabContent {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+#expensesChartByCategory {
+    width: 100% !important;
+    height: auto !important;
+    margin-bottom: 20px;
+}
