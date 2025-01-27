@@ -323,6 +323,13 @@ function deleteTab(tabId) {
 
 function addExpense(tabId, event) {
     event.preventDefault();
+    const amount = parseFloat(document.getElementById(`amount-${tabId}`).value);
+    const category = document.getElementById(`category-${tabId}`).value;
+    if (checkBudgetAlert(tabId, category, amount)) {
+        if (!confirm('Would you like to proceed even though it exceeds the budget?')) {
+            return;
+        }
+    }
 
     const storageKey = `expenses-${tabId}`;
     const data = JSON.parse(localStorage.getItem(storageKey));
@@ -467,4 +474,19 @@ function deleteExpense(tabId, expenseId) {
     updateResume(data);
     localStorage.setItem(storageKey, JSON.stringify(data));
     refreshSummary(tabId);
+}
+
+function checkBudgetAlert(tabId, category, amount) {
+    const storageKey = `expenses-${tabId}`;
+    const data = JSON.parse(localStorage.getItem(storageKey));
+    
+    const currentTotal = data.resume.category[category] || 0;
+    const budget = data.budget[category] || 0;
+    
+    if (budget > 0 && (currentTotal + amount) > budget) {
+        const overAmount = (currentTotal + amount - budget).toFixed(2);
+        const message = `${category}: Budget will be exceeded by ${overAmount}.\nDo you want to continue?`;
+        return confirm(message);
+    }
+    return true;
 }
