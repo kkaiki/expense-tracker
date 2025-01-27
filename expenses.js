@@ -294,6 +294,7 @@ function createHtmlContent(tabId) {
     `;
 
     document.getElementById('expensesTabContent').insertAdjacentHTML('beforeend', tabContent);
+    loadCategories(tabId);
 }
 
 function activateTab(tabId) {
