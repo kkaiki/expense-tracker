@@ -326,11 +326,7 @@ function addExpense(tabId, event) {
     event.preventDefault();
     const amount = parseFloat(document.getElementById(`amount-${tabId}`).value);
     const category = document.getElementById(`category-${tabId}`).value;
-    if (checkBudgetAlert(tabId, category, amount)) {
-        if (!confirm('Would you like to proceed even though it exceeds the budget?')) {
-            return;
-        }
-    }
+    checkBudgetAlert(tabId, category, amount)
 
     const storageKey = `expenses-${tabId}`;
     const data = JSON.parse(localStorage.getItem(storageKey));
@@ -413,7 +409,6 @@ function refreshSummary(tabId) {
 
     document.getElementById(`summary-${tabId}`).innerHTML = summaryHtml;
 
-    // Update expenses list
     const expensesHtml = data.expenses.map(expense => `
         <div class="card mb-2 expense-card">
             <div class="card-body py-2">
@@ -450,9 +445,12 @@ function refreshSummary(tabId) {
                                onchange="updateExpenseField('${tabId}', '${expense.id}', 'amount', this.value)"
                                class="seamless-input text-end fw-bold" 
                                style="background: transparent; border: none; width: 100px;">
-                        <button class="btn btn-link text-danger ms-2 p-0" 
-                                onclick="deleteExpense('${tabId}', '${expense.id}')">
-                            <i class="bi bi-x-circle"></i>
+                        <button class="btn btn-outline-danger ms-2 px-3 py-2 text-dark d-flex align-items-center justify-content-center" 
+                            style="min-width: 44px; height: 24px;"
+                            onclick="deleteExpense('${tabId}', '${expense.id}')"
+                            title="Delete">
+                            <i class="bi bi-trash"></i>
+                            <span class="ms-1">Delete</span>
                         </button>
                     </div>
                 </div>
@@ -508,7 +506,6 @@ function deleteExpense(tabId, expenseId) {
 function updateExpenseField(tabId, expenseId, field, value) {
     const storageKey = `expenses-${tabId}`;
     const data = JSON.parse(localStorage.getItem(storageKey));
-    console.log(data);
     
     const expenseIndex = data.expenses.findIndex(exp => exp.id === expenseId);
     if (expenseIndex === -1) return;
@@ -516,12 +513,9 @@ function updateExpenseField(tabId, expenseId, field, value) {
     if (field === 'amount') {
         value = parseFloat(value) || 0;
         const category = data.expenses[expenseIndex].category;
-        if (!checkBudgetAlert(tabId, category, value)) {
-            return;
-        }
     } else if (field === 'category') {
         const amount = data.expenses[expenseIndex].amount;
-        if (!checkBudgetAlert(tabId, value, amount)) {
+        if (!checkBudgetAlert(tabId, value, amount, expenseId)) {
             return;
         }
     }
@@ -532,15 +526,21 @@ function updateExpenseField(tabId, expenseId, field, value) {
     refreshSummary(tabId);
 }
 
-function checkBudgetAlert(tabId, category, amount) {
+function checkBudgetAlert(tabId, category, newAmount, expenseId) {
     const storageKey = `expenses-${tabId}`;
     const data = JSON.parse(localStorage.getItem(storageKey));
-    
-    const currentTotal = data.resume.category[category] || 0;
+
+    const currentTotal = data.expenses
+        .filter(exp => exp.category === category)
+        .reduce((sum, exp) => {
+            if (exp.id === expenseId) return sum;
+            return sum + exp.amount;
+        }, 0);
+
     const budget = data.budget[category] || 0;
-    
-    if (budget > 0 && (currentTotal + amount) > budget) {
-        const overAmount = (currentTotal + amount - budget);
+
+    if (budget > 0 && (currentTotal + newAmount) > budget) {
+        const overAmount = (currentTotal + newAmount - budget);
         const message = `${category}: Budget will be exceeded by $${overAmount}\nDo you want to continue?`;
         return confirm(message);
     }
