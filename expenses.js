@@ -184,7 +184,7 @@ function addNewBudget(tabId, event) {
     // Reset form and refresh display
     event.target.reset();
     loadCategories(tabId);
-    refreshSummary(tabId);
+    refreshAll(tabId);
 }
 
 function loadCategories(tabId) {
@@ -287,7 +287,7 @@ function createHtmlContent(tabId) {
 
                 <!-- Expenses List -->
                 <div id="expenses-list-${tabId}">
-                    <!-- Expenses will be populated by refreshSummary function -->
+                    <!-- Expenses will be populated by refreshExpenses function -->
                 </div>
             </div>
         </div>
@@ -345,33 +345,29 @@ function addExpense(tabId, event) {
 
     // Reset form and refresh display
     event.target.reset();
-    refreshSummary(tabId);
+    refreshAll(tabId);
 }
 
 function updateResume(data) {
     // Reset resume with dynamic categories
     data.resume = {
         total: 0,
-        category: {}
+        category: Object.keys(data.budget).reduce((acc, category) => {
+            acc[category] = 0;
+            return acc;
+        }, {})
     };
 
     // Calculate totals
     data.expenses.forEach(expense => {
         data.resume.total += expense.amount;
-        // Initialize category if it doesn't exist
-        if (!data.resume.category[expense.category]) {
-            data.resume.category[expense.category] = 0;
-        }
         data.resume.category[expense.category] += expense.amount;
     });
 }
 
-function refreshSummary(tabId) {
-    const storageKey = `expenses-${tabId}`;
-    const data = JSON.parse(localStorage.getItem(storageKey));
-
+function refreshBudget(data, tabId) {
     let budgetHtml = '';
-    Object.keys(data.resume.category).forEach(category => {
+    Object.keys(data.budget).forEach(category => {
         budgetHtml += `<form onsubmit="updateBudget('${tabId}', '${category}')" class="mb-3">
                     <div class="row">
                         <label>${category}</label>
@@ -387,28 +383,31 @@ function refreshSummary(tabId) {
     });
 
     document.getElementById(`budget-form-${tabId}`).innerHTML = budgetHtml;
+}
 
-    // Update summary with dynamic categories
+function refreshSummary(data, tabId) {
     let categoryBudgetHtml = '';
     Object.keys(data.resume.category).forEach(category => {
         categoryBudgetHtml += `
-            <p>${category} Expenses: $${data.resume.category[category]} / $${data.budget[category] || 0} Budget</p>
-        `;
+             <p>${category} Expenses: $${data.resume.category[category]} / $${data.budget[category] || 0} Budget</p>
+         `;
     });
 
     const summaryHtml = `
-        <div class="card">
-            <div class="card-body">
-                <h5>Summary</h5>
-                <p>Total Expenses: $${data.resume.total}</p>
-                ${categoryBudgetHtml}
-                <p>Remaining Income: $${data.income - data.resume.total}</p>
-            </div>
-        </div>
-    `;
+         <div class="card">
+             <div class="card-body">
+                 <h5>Summary</h5>
+                 <p>Total Expenses: $${data.resume.total}</p>
+                 ${categoryBudgetHtml}
+                 <p>Remaining Income: $${data.income - data.resume.total}</p>
+             </div>
+         </div>
+     `;
 
     document.getElementById(`summary-${tabId}`).innerHTML = summaryHtml;
+}
 
+function refreshExpenses(data, tabId) {
     const expensesHtml = data.expenses.map(expense => `
         <div class="card mb-2 expense-card">
             <div class="card-body py-2">
@@ -425,16 +424,16 @@ function refreshSummary(tabId) {
                             <select onchange="updateExpenseField('${tabId}', '${expense.id}', 'category', this.value)"
                                     class="seamless-input text-muted" 
                                     style="background: transparent; border: none; padding: 0;">
-                                ${Object.keys(data.budget).map(cat => 
-                                    `<option value="${cat}" ${cat === expense.category ? 'selected' : ''}>${cat}</option>`
-                                ).join('')}
+                                ${Object.keys(data.budget).map(cat =>
+        `<option value="${cat}" ${cat === expense.category ? 'selected' : ''}>${cat}</option>`
+    ).join('')}
                             </select>
                             <small class="text-muted ms-2">
                                 ${new Date(expense.date).toLocaleDateString('en-US', {
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric'
-                                })}
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    })}
                             </small>
                         </div>
                     </div>
@@ -460,6 +459,15 @@ function refreshSummary(tabId) {
     document.getElementById(`expenses-list-${tabId}`).innerHTML = expensesHtml;
 }
 
+function refreshAll(tabId) {
+    const storageKey = `expenses-${tabId}`;
+    const data = JSON.parse(localStorage.getItem(storageKey));
+
+    refreshBudget(data, tabId);
+    refreshSummary(data, tabId);
+    refreshExpenses(data, tabId);
+}
+
 function loadContent(tabId) {
     const storageKey = `expenses-${tabId}`;
     const data = JSON.parse(localStorage.getItem(storageKey));
@@ -475,7 +483,7 @@ function loadContent(tabId) {
         }
     });
 
-    refreshSummary(tabId);
+    refreshAll(tabId);
 }
 
 function updateIncome(tabId) {
@@ -483,7 +491,7 @@ function updateIncome(tabId) {
     const data = JSON.parse(localStorage.getItem(storageKey));
     data.income = parseFloat(document.getElementById(`income-${tabId}`).value) || 0;
     localStorage.setItem(storageKey, JSON.stringify(data));
-    refreshSummary(tabId);
+    refreshAll(tabId);
 }
 
 function updateBudget(tabId, category) {
@@ -491,7 +499,7 @@ function updateBudget(tabId, category) {
     const data = JSON.parse(localStorage.getItem(storageKey));
     data.budget[category] = parseFloat(document.getElementById(`budget-${category}-${tabId}`).value) || 0;
     localStorage.setItem(storageKey, JSON.stringify(data));
-    refreshSummary(tabId);
+    refreshAll(tabId);
 }
 
 function deleteExpense(tabId, expenseId) {
@@ -500,13 +508,13 @@ function deleteExpense(tabId, expenseId) {
     data.expenses = data.expenses.filter(expense => expense.id !== expenseId);
     updateResume(data);
     localStorage.setItem(storageKey, JSON.stringify(data));
-    refreshSummary(tabId);
+    refreshAll(tabId);
 }
 
 function updateExpenseField(tabId, expenseId, field, value) {
     const storageKey = `expenses-${tabId}`;
     const data = JSON.parse(localStorage.getItem(storageKey));
-    
+
     const expenseIndex = data.expenses.findIndex(exp => exp.id === expenseId);
     if (expenseIndex === -1) return;
 
@@ -523,7 +531,7 @@ function updateExpenseField(tabId, expenseId, field, value) {
     data.expenses[expenseIndex][field] = value;
     updateResume(data);
     localStorage.setItem(storageKey, JSON.stringify(data));
-    refreshSummary(tabId);
+    refreshAll(tabId);
 }
 
 function checkBudgetAlert(tabId, category, newAmount, expenseId) {
