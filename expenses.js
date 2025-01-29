@@ -280,6 +280,10 @@ function createHtmlContent(tabId) {
                                    id="description-${tabId}" required>
                         </div>
                         <div class="col">
+                            <input type="date" class="form-control" placeholder="Date" 
+                                   id="date-${tabId}" value="${new Date().toISOString().split('T')[0]}" required>
+                        </div>
+                        <div class="col">
                             <button type="submit" class="btn btn-primary">Add Expense</button>
                         </div>
                     </div>
@@ -336,7 +340,7 @@ function addExpense(tabId, event) {
         amount: parseFloat(document.getElementById(`amount-${tabId}`).value),
         category: document.getElementById(`category-${tabId}`).value,
         description: document.getElementById(`description-${tabId}`).value,
-        date: new Date().toLocaleDateString()
+        date: document.getElementById(`date-${tabId}`).value
     };
 
     data.expenses.push(expense);
@@ -408,7 +412,7 @@ function refreshSummary(data, tabId) {
 }
 
 function refreshExpenses(data, tabId) {
-    const expensesHtml = data.expenses.map(expense => `
+    const expensesHtml = data.expenses.sort((a, b) => new Date(b.date) - new Date(a.date)).map(expense => `
         <div class="card mb-2 expense-card">
             <div class="card-body py-2">
                 <div class="d-flex justify-content-between align-items-center">
@@ -429,11 +433,11 @@ function refreshExpenses(data, tabId) {
     ).join('')}
                             </select>
                             <small class="text-muted ms-2">
-                                ${new Date(expense.date).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-    })}
+                            <input type="date" 
+                                   value="${expense.date}" 
+                                   onfocusout="updateExpenseField('${tabId}', '${expense.id}', 'date', this.value)"
+                                   class="seamless-input" 
+                                   style="background: transparent; border: none;">
                             </small>
                         </div>
                     </div>
@@ -520,7 +524,6 @@ function updateExpenseField(tabId, expenseId, field, value) {
 
     if (field === 'amount') {
         value = parseFloat(value) || 0;
-        const category = data.expenses[expenseIndex].category;
     } else if (field === 'category') {
         const amount = data.expenses[expenseIndex].amount;
         if (!checkBudgetAlert(tabId, value, amount, expenseId)) {
