@@ -264,26 +264,32 @@ function createHtmlContent(tabId) {
                     <!-- Summary will be populated by refreshSummary function -->
                 </div>
 
+                <h3>Add Expense</h3>
+
                  <!-- Add Expense Form -->
                 <form onsubmit="addExpense('${tabId}', event)" class="mb-3">
-                    <div class="row">
-                        <div class="col">
+                    <div class="row mb-3">
+                        <div class="col-5">
                             <input type="number" class="form-control" placeholder="Amount" 
                                    id="amount-${tabId}" required>
                         </div>
-                        <div class="col">
+                        <div class="col-5">
                             <select class="form-control" id="category-${tabId}" required>
                             </select>
                         </div>
-                        <div class="col">
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-5">
                             <input type="text" class="form-control" placeholder="Description" 
                                    id="description-${tabId}" required>
                         </div>
-                        <div class="col">
+                        <div class="col-5">
                             <input type="date" class="form-control" placeholder="Date" 
                                    id="date-${tabId}" value="${new Date().toISOString().split('T')[0]}" required>
                         </div>
-                        <div class="col">
+                    </div>
+                    <div class="row">
+                        <div class="col-5">
                             <button type="submit" class="btn btn-primary">Add Expense</button>
                         </div>
                     </div>
