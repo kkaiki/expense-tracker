@@ -28,6 +28,7 @@ function createCategoryDoughnutChart() {
 
     try {
         if (Object.keys(expenses.resume.category).length > 0) {
+            document.getElementById('expensesChartError').innerHTML = '';
             window.expensesByCategoryChart = new Chart(expensesChartByCategory, {
                 type: 'pie',
                 data: {
@@ -66,6 +67,8 @@ function createDailyExpensesChart() {
 
     try {
         if (expenses.length > 0) {
+            document.getElementById('dailyExpensesChartError').innerHTML = '';
+
             const groupedData = {};
             expenses.forEach(expense => {
                 const { date, category, amount } = expense;
@@ -76,7 +79,7 @@ function createDailyExpensesChart() {
 
             const categories = [...new Set(expenses.map(exp => exp.category))];
 
-            const labels = Object.keys(groupedData).sort(); 
+            const labels = Object.keys(groupedData).sort();
             const datasets = categories.map((category, index) => ({
                 label: category,
                 data: labels.map(date => groupedData[date][category] || 0),
