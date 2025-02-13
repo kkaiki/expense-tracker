@@ -90,7 +90,7 @@ function addNewTab() {
     document.getElementById('validationMessage').textContent = '';
 
     // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('newTabModal'));
+    const modal = new bootstrap.Modal(document.getElementById('newMonthModal'));
     modal.show();
 }
 
@@ -133,7 +133,7 @@ function validateAndCreateDate() {
     activateTab(tabId);
 
     // Close modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('newTabModal'));
+    const modal = bootstrap.Modal.getInstance(document.getElementById('newMonthModal'));
     modal.hide();
 }
 
